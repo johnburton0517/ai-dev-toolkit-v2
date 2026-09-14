@@ -33,7 +33,7 @@ Use `<workflow_detection>...</workflow_detection>` XML-style tags.
 
 Detection order:
 1. Read `.cdk/workflow-state.json` — example: `{ "ticket_id": "TICKET-123", "branch": "feat/TICKET-123-slug", "stage": "planned" }`
-2. Fall back to git branch name parsing (`feat/PROJ-123-description`)
+2. Fall back to git branch name parsing (`feat/123-description`)
 3. Fall back to `.cdk/<ticket-id>/plan.md` artifact scan
 
 If found: display "Workflow detected: TICKET-ID / Current stage: planned"

@@ -31,7 +31,7 @@ Then include the complete help content (this is the primary deliverable — repr
 
 ## cdk (Core Development Kit)
 
-Structured, spec-driven development workflow integrating JIRA, multi-agent code review, and PR management.
+Structured, spec-driven development workflow integrating GitHub Issues, multi-agent code review, and PR management.
 
 Context is persisted across sessions in `.cdk/<ticket-id>/` — no external tools required.
 
@@ -44,7 +44,7 @@ Run these skills in order for each ticket:
 | Step | Skill | Description |
 | ---- | ----- | ----------- |
 | 1 | `/cdk:onboard` | Introduce the workflow and validate your environment (run once per project) |
-| 2 | `/cdk:start-ticket <ticket-id>` | Fetch JIRA ticket details, score story readiness, and create a feature branch |
+| 2 | `/cdk:start-ticket <issue-number>` | Fetch GitHub Issue details, score story readiness, and create a feature branch |
 | 3 | `/cdk:research` | Explore the codebase and capture findings |
 | 4 | `/cdk:plan` | Create an implementation spec from research |
 | 5 | `/cdk:implement` | Write code following the spec |

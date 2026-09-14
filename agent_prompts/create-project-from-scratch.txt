@@ -219,7 +219,7 @@ Create the flagship plugin at `src/plugins/cdk/`. This is the primary deliverabl
 ```yaml
 name: cdk
 version: 2.0.0
-description: Core development workflow plugin — structured dev loop with JIRA integration,
+description: Core development workflow plugin — structured dev loop with GitHub Issues integration,
   file-based task tracking, multi-agent code review, and PR management
 owner: John Burton
 risk: low
@@ -228,13 +228,13 @@ compliance:
 tags:
   - development
   - workflow
-  - jira
+  - github-issues
   - code-review
   - pull-request
   - conventional-commits
 goals:
   - Structured development workflow from ticket to PR
-  - JIRA integration for story/ticket context
+  - GitHub Issues integration for story/ticket context
   - File-based task tracking for progress management
   - Multi-agent code review
   - Conventional commit message formatting
@@ -242,17 +242,7 @@ goals:
 
 ### Plugin-level supporting files
 
-**mcp.json** — Atlassian MCP for JIRA:
-```json
-{
-  "mcpServers": {
-    "atlassian": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp"]
-    }
-  }
-}
-```
+**No `mcp.json` required** — CDK uses GitHub CLI (`gh issue view` / `gh issue list` / `gh issue edit`) for ticket fetch and labeling. Manual paste is the fallback when `gh` is unavailable.
 
 **settings-template.md** — Template for user projects:
 ```yaml
@@ -265,7 +255,7 @@ base_branch: main
 - Branch naming: feat/<ticket>-<summary>
 ```
 
-**README.md** — End-user documentation covering workflow, skills, agents, MCP, configuration.
+**README.md** — End-user documentation covering workflow, skills, agents, GitHub Issues via `gh`, configuration.
 
 ### Agents (9) — src/plugins/cdk/agents/
 
@@ -319,8 +309,8 @@ Use the individual prompts in `agent_prompts/cdk-*.txt` to generate each skill f
 ```json
 [
   {
-    "ticket_id": "PROJ-123",
-    "branch": "feat/PROJ-123-short-slug",
+    "ticket_id": "123",
+    "branch": "feat/123-short-slug",
     "stage": "started",
     "active": true
   }

@@ -145,7 +145,7 @@ Recommended next: `/cdk:plan`
 Primary deliverable — full template above.
 
 ### Input dependencies
-- JIRA ticket context (from start-ticket or MCP)
+- GitHub Issue context (from start-ticket or `gh issue view`)
 - `.cdk/workflow-state.json` with stage `started`
 
 ### Agent dependencies

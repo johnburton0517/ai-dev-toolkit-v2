@@ -153,7 +153,7 @@ If open questions exist, list them and request clarification before stage transi
 After approval, update the active entry in `.cdk/workflow-state.json`:
 
 ```json
-{ "ticket_id": "TICKET-123", "branch": "feat/TICKET-123-slug", "stage": "researched", "active": true }
+{ "ticket_id": "123", "branch": "feat/123-slug", "stage": "researched", "active": true }
 ```
 
 **Progress:** ✅ research → ➡️ plan

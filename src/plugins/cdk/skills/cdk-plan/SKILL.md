@@ -189,7 +189,7 @@ Fix any failure before CHECKPOINT.
 After **user approval**, update active entry in `.cdk/workflow-state.json`:
 
 ```json
-{ "ticket_id": "TICKET-123", "branch": "feat/TICKET-123-slug", "stage": "planned", "active": true }
+{ "ticket_id": "123", "branch": "feat/123-slug", "stage": "planned", "active": true }
 ```
 
 <CHECKPOINT>

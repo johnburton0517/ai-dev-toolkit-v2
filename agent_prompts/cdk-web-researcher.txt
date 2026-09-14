@@ -58,7 +58,7 @@ Constraints: [Stack, versions, scope limits]
 2. **Community Knowledge** — blog posts, Stack Overflow, GitHub discussions; pitfalls and known issues; consensus vs. controversial; prioritize recent and high-engagement
 3. **Risk** — CVEs, security advisories, performance benchmarks, dependency health; prioritize official advisories
 4. **Factual** — RFCs, W3C specs, compliance (WCAG, OWASP); primary sources > summaries
-5. **Internal Documentation** — ADRs, runbooks, internal standards via Confluence/Atlassian MCP if available; fall back to web search
+5. **Internal Documentation** — ADRs, runbooks, internal standards from the repo (docs/, wiki, linked GitHub Issues) if available; fall back to web search
 
 ### Research Methodology (5 steps)
 1. Plan queries — 2–4 targeted searches
@@ -107,7 +107,7 @@ Spawned by `cdk-research` when ticket involves external libraries, APIs, framewo
 
 **Runtime outputs:** Findings merged into `.cdk/<ticket-id>/research.md` under "Additional Research" sections
 
-**Plugin MCP dependency:** Atlassian MCP (`mcp.json`) may be used for internal docs search.
+**Plugin MCP dependency:** None required. Prefer repo docs and web search for internal/external research.
 
 ## Quality Bar
 

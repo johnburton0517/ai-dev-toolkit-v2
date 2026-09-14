@@ -68,8 +68,8 @@ Example:
 
 ```json
 [
-  { "ticket_id": "TICKET-123", "branch": "feat/TICKET-123-slug", "stage": "implemented", "active": false },
-  { "ticket_id": "TICKET-456", "branch": "feat/TICKET-456-slug", "stage": "planned", "active": true }
+  { "ticket_id": "123", "branch": "feat/123-slug", "stage": "implemented", "active": false },
+  { "ticket_id": "456", "branch": "feat/456-slug", "stage": "planned", "active": true }
 ]
 ```
 

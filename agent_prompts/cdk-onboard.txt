@@ -15,7 +15,7 @@ Return ONLY the complete markdown file content. No commentary before or after.
 ```yaml
 ---
 name: cdk-onboard
-description: Introduces the cdk workflow and validates the development environment including git, GitHub CLI, Atlassian MCP, and .cdk settings. Use when the user is new to cdk, wants to set up the workflow, or asks how to get started.
+description: Introduces the cdk workflow and validates the development environment including git, GitHub CLI, and .cdk settings. Use when the user is new to cdk, wants to set up the workflow, or asks how to get started.
 ---
 ```
 
@@ -36,13 +36,15 @@ Welcome message + workflow overview:
 **Core Workflow table** (5 steps):
 | Step | Skill | Purpose |
 | 1 | `/cdk:onboard` | You are here; validate environment |
-| 2 | `/cdk:start-ticket <ticket-id>` | Fetch JIRA, score readiness, create branch |
+| 2 | `/cdk:start-ticket <issue-number>` | Fetch GitHub Issue, score readiness, create branch |
 | 3 | `/cdk:research` | Explore codebase |
 | 4 | `/cdk:plan` | Create implementation plan |
 | 5 | `/cdk:implement` | Write code |
 
 **Utility Skills table** (8 skills):
 switch-ticket, commit, review, create-pr, fix-review, provide-feedback, report-issue
+
+Note: ticket fetch uses GitHub CLI (`gh issue view` / `gh issue list`) — no Atlassian MCP required.
 
 ### Phase 2: Confirmation
 Ask: "Ready to validate your environment for cdk?"
@@ -54,19 +56,15 @@ Use `<activation>` tags. Run checks in order:
 - `git rev-parse --git-dir`
 - FAIL → "Run `git init`"
 
-**Check 2: GitHub CLI (Optional)**
-- `gh --version`
-- WARNING → needed for create-pr; install with brew
+**Check 2: GitHub CLI (Recommended)**
+- `gh --version` and `gh auth status`
+- WARNING → needed for start-ticket / create-pr; install with brew; user can paste issue details manually
 
 **Check 3: Settings File**
 - Look for `.cdk/settings.md`
 - If missing, offer to create from template
 
-**Check 4: Atlassian MCP (Optional)**
-- Test MCP connectivity
-- WARNING → can paste ticket details manually
-
-**Check 5: Gitignore Entry**
+**Check 4: Gitignore Entry**
 - Check `.gitignore` for `.cdk`
 - If missing, append and commit:
   ```bash
@@ -75,7 +73,7 @@ Use `<activation>` tags. Run checks in order:
   git commit -m "chore: ignore .cdk workflow directory"
   ```
 
-**Check 6: Copilot Plugin Files** (conditional block):
+**Check 5: Copilot Plugin Files** (conditional block):
 ```
 {{#copilot}}
 ... check .github/ for uncommitted plugin files ...
@@ -85,10 +83,10 @@ Use `<activation>` tags. Run checks in order:
 
 ### Phase 4: Ready State
 Display status table with Check / Status / Notes columns.
-Overall: READY or NOT READY.
+Overall: READY or NOT READY (READY if Check 1 and Check 4 are PASS).
 
 ### END STATE
-If READY: next skill is `/cdk:start-ticket <TICKET-ID>` with workflow progress line.
+If READY: next skill is `/cdk:start-ticket <ISSUE-NUMBER>` with workflow progress line.
 If NOT READY: fix issues and re-run onboard.
 
 Include core workflow progress and utility skills list in blockquote.
@@ -115,21 +113,6 @@ Add any project-specific workflow notes here.
 
 Onboard Check 3 offers to create `.cdk/settings.md` from this template.
 
-### `src/plugins/cdk/mcp.json`
-Plugin MCP config for Atlassian JIRA:
-```json
-{
-  "mcpServers": {
-    "atlassian": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp"]
-    }
-  }
-}
-```
-
-Onboard Check 4 tests this MCP connectivity.
-
 ### Runtime artifacts created during onboard
 - `.cdk/settings.md` (if user accepts)
 - `.gitignore` entry for `.cdk` (if missing)
@@ -139,11 +122,11 @@ Onboard Check 4 tests this MCP connectivity.
 
 - **Type:** Core workflow skill (step 1 — run once per project)
 - **Invoked via:** `/cdk:onboard`
-- **Mustache conditional:** `{{#copilot}}...{{/copilot}}` for Check 6
+- **Mustache conditional:** `{{#copilot}}...{{/copilot}}` for Check 5
 
 ## Quality Bar
 
 - Strict 4-phase execution contract (no checks before confirmation)
-- All 5 (+1 conditional) environment checks with PASS/WARNING/FAIL semantics
-- References settings-template.md and mcp.json behavior
+- Environment checks with PASS/WARNING/FAIL semantics (no Atlassian MCP check)
+- References settings-template.md
 - END STATE with clear next step

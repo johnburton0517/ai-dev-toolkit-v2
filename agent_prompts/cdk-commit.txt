@@ -2,7 +2,7 @@ You are authoring a CDK plugin skill definition for the ai-dev-toolkit repositor
 
 ## Your Task
 
-Create the `cdk-commit` skill — a utility skill that stages and creates conventional git commits with optional JIRA ticket references.
+Create the `cdk-commit` skill — a utility skill that stages and creates conventional git commits with optional GitHub issue references.
 
 ## Output
 
@@ -22,7 +22,7 @@ Return ONLY the complete markdown file content. No commentary before or after.
 ```yaml
 ---
 name: cdk-commit
-description: Stages and creates a conventional commit (feat, fix, docs, style, refactor, test, chore) with optional JIRA ticket reference. Use when the user asks to commit, create a git commit, or save their changes.
+description: Stages and creates a conventional commit (feat, fix, docs, style, refactor, test, chore) with optional GitHub issue reference. Use when the user asks to commit, create a git commit, or save their changes.
 ---
 ```
 
@@ -41,9 +41,9 @@ Optional longer description (wrap ~72 chars).
 **Types table** with columns: Type, When to use, Example
 Include: feat, fix, docs, style, refactor, test, chore, perf, ci, build
 
-Each example uses `[PROJ-123]` ticket format.
+Each example uses `[#123]` ticket format.
 
-Note: Omit `[PROJ-123]` block entirely when no ticket applies.
+Note: Omit `[#123]` block entirely when no ticket applies.
 
 **Quick checks:**
 - Ticket? Append `[TICKET-ID]` or omit brackets entirely

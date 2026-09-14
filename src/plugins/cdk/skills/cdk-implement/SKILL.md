@@ -19,7 +19,7 @@ Stay focused on the spec — no scope creep, unrelated refactors, or over-engine
 
 Detection order:
 
-1. Read `.cdk/workflow-state.json` — active entry (e.g. `{ "ticket_id": "TICKET-123", "branch": "feat/TICKET-123-slug", "stage": "planned" }`)
+1. Read `.cdk/workflow-state.json` — active entry (e.g. `{ "ticket_id": "123", "branch": "feat/123-slug", "stage": "planned" }`)
 2. Fall back to git branch name: `feat/123-description`
 3. Fall back to `.cdk/<ticket-id>/plan.md` artifact scan
 
@@ -106,7 +106,7 @@ Optional: user may review `implementation-notes.md`.
 After approval, set active entry in `.cdk/workflow-state.json`:
 
 ```json
-{ "ticket_id": "TICKET-123", "branch": "feat/TICKET-123-slug", "stage": "implemented", "active": true }
+{ "ticket_id": "123", "branch": "feat/123-slug", "stage": "implemented", "active": true }
 ```
 
 **Progress:** ✅ onboard → ✅ start-ticket → ✅ research → ✅ plan → ✅ implement

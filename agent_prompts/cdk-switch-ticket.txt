@@ -85,14 +85,14 @@ JSON **array** (not single object) — critical format:
 ```json
 [
   {
-    "ticket_id": "PROJ-123",
-    "branch": "feat/PROJ-123-slug",
+    "ticket_id": "123",
+    "branch": "feat/123-slug",
     "stage": "planned",
     "active": true
   },
   {
-    "ticket_id": "PROJ-456",
-    "branch": "feat/PROJ-456-other",
+    "ticket_id": "456",
+    "branch": "feat/456-other",
     "stage": "started",
     "active": false
   }
@@ -100,7 +100,7 @@ JSON **array** (not single object) — critical format:
 ```
 
 Fields per entry:
-- `ticket_id` — JIRA key
+- `ticket_id` — GitHub issue number (digits only)
 - `branch` — feature branch name
 - `stage` — workflow stage
 - `active` — boolean, exactly one true at a time

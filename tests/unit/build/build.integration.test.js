@@ -31,16 +31,21 @@ describe('build output (sample-plugin)', () => {
     expect(existsSync(agentPath)).toBe(true);
   });
 
-  it('builds cdk with 9 agents, 13 skills, and MCP per target', () => {
+  it('builds cdk with agents and skills, without Atlassian MCP', () => {
     const claudeAgents = join(ROOT, 'plugins/claude/cdk/agents');
     const copilotAgents = join(ROOT, 'plugins/copilot/cdk/agents');
     const skills = join(ROOT, 'plugins/claude/cdk/skills');
-    expect(existsSync(join(ROOT, 'plugins/claude/cdk/.mcp.json'))).toBe(true);
-    expect(existsSync(join(ROOT, 'plugins/copilot/cdk/mcp.json'))).toBe(true);
-    expect(existsSync(join(ROOT, 'plugins/cursor/cdk/mcp.json'))).toBe(true);
+    expect(existsSync(join(ROOT, 'plugins/claude/cdk/.mcp.json'))).toBe(false);
+    expect(existsSync(join(ROOT, 'plugins/copilot/cdk/mcp.json'))).toBe(false);
+    expect(existsSync(join(ROOT, 'plugins/cursor/cdk/mcp.json'))).toBe(false);
     expect(existsSync(join(claudeAgents, 'cdk-code-reviewer.md'))).toBe(true);
     expect(existsSync(join(copilotAgents, 'cdk-code-reviewer.agent.md'))).toBe(true);
     expect(existsSync(join(skills, 'cdk-onboard/SKILL.md'))).toBe(true);
+    expect(existsSync(join(skills, 'cdk-start-ticket/SKILL.md'))).toBe(true);
     expect(existsSync(join(skills, 'cdk-review/SKILL.md'))).toBe(true);
+    const startTicket = readFileSync(join(skills, 'cdk-start-ticket/SKILL.md'), 'utf-8');
+    expect(startTicket).toContain('gh issue view');
+    expect(startTicket).not.toContain('Atlassian');
+    expect(startTicket).not.toContain('JIRA');
   });
 });
