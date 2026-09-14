@@ -21,6 +21,14 @@ npm test
 
 See [docs/installing.md](docs/installing.md) for per-ecosystem marketplace setup.
 
+**Copilot (preferred):**
+
+```bash
+copilot plugin marketplace add johnburton0517/ai-dev-toolkit-v2
+# or: copilot plugin marketplace add /path/to/ai-dev-toolkit-v2
+copilot plugin install cdk@ai-dev-toolkit
+```
+
 ## Contribute
 
 Intake and review criteria: [docs/intake.md](docs/intake.md). Process: [contributing.md](contributing.md).
