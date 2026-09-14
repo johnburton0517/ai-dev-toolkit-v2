@@ -1,0 +1,25 @@
+name: cdk
+version: 2.0.0
+description: >-
+  Core development workflow plugin — structured dev loop with GitHub Issues
+  integration, file-based task tracking, multi-agent code review, and PR management
+owner:
+  name: John Burton
+  email: john.burton0517@example.com
+risk: low
+compliance:
+  - approved
+tags:
+  - development
+  - workflow
+  - github-issues
+  - code-review
+  - pull-request
+  - conventional-commits
+goals:
+  - Structured development workflow from ticket to PR
+  - GitHub Issues integration for story/ticket context
+  - File-based task tracking for progress management
+  - Multi-agent code review
+  - Conventional commit message formatting
+publish: true

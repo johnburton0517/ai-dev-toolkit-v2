@@ -1,0 +1,152 @@
+You are authoring a CDK plugin skill definition for the ai-dev-toolkit repository.
+
+## Your Task
+
+Create the `cdk-start-ticket` skill — fetches JIRA ticket via MCP, scores story readiness, creates feature branch, initializes workflow state.
+
+## Output
+
+Return ONLY the complete markdown file content. No commentary before or after.
+
+**Target file path:** `src/plugins/cdk/skills/cdk-start-ticket/SKILL.md`
+
+## Required Frontmatter
+
+```yaml
+---
+name: cdk-start-ticket
+description: Fetches a JIRA ticket via MCP, scores story readiness, creates a feature branch, and initializes workflow state in .cdk/. Use when the user wants to start work on a ticket, begin a JIRA story, or kick off a new feature branch.
+---
+```
+
+Include `{{{HEADER}}}` after frontmatter.
+
+## Body Structure
+
+### Workflow Detection block
+Before reading state, migrate legacy format silently:
+- If `.cdk/workflow-state.json` root is object (not array): wrap as `[ { ...existingObject, "active": true } ]`
+
+Then read array, find entry with `"active": true`.
+
+If existing active workflow: warn user, ask confirm before starting new ticket.
+If none: "No active workflow. Ready to start new ticket."
+
+### Uncommitted Changes Detection block
+Run `git status --porcelain`.
+
+If dirty, pause with 3 options:
+1. Stash — `git stash push -m "WIP on <current-branch>"`
+2. WIP commit — `git add -A && git commit -m "chore: WIP <description>"`
+3. Abort — stay on current branch
+
+Wait for user choice before continuing.
+
+### 6-step Workflow
+
+**1. Parse ticket ID** from arguments — validate `PROJECT-NUMBER` format
+
+**2. Fetch JIRA ticket** via MCP
+- Extract: summary, description, acceptance criteria
+- If MCP unavailable: prompt for manual input
+
+**2a. Evaluate story readiness** (5 checks):
+
+| # | Check | Pass condition |
+| 1 | Has description | Non-empty |
+| 2 | Has acceptance criteria | AC section with ≥1 criterion |
+| 3 | AC is self-contained | Not solely external links |
+| 4 | Has story points | Estimate field set |
+| 5 | No blocking dependencies | No open blockers |
+
+Present inline score X/5 with status table.
+
+- 5/5: proceed automatically
+- 3–4/5: warn, ask proceed anyway
+- ≤2/5: strongly recommend refining, ask proceed anyway
+
+**3. Create feature branch**
+Base branch resolution (3-tier):
+1. `.cdk/settings.md` → `base_branch`
+2. git remote HEAD
+3. `main`
+
+```bash
+git checkout <base-branch>
+git pull
+git checkout -b feat/<ticket-id>-<summary-slug>
+```
+
+**4. Create ticket directory**
+```bash
+mkdir -p .cdk/<ticket-id>
+```
+
+**5. Write workflow state**
+Read current array (or `[]`). Set all `"active": false`. Append or update target entry with `"active": true`, `"stage": "started"`.
+
+```json
+[
+  { "ticket_id": "TICKET-123", "branch": "feat/TICKET-123-slug", "stage": "started", "active": true }
+]
+```
+
+**6. Label JIRA ticket** via MCP
+- Add label `ai-dev-toolkit:cdk` (append, don't replace)
+- Skip if already present
+- Warn on MCP failure, don't block
+
+### CHECKPOINT
+Report: ticket ID, branch, acceptance criteria.
+Progress: ✅ start-ticket → ➡️ research
+Recommended next: `/cdk:research`
+
+## Supporting Files
+
+### `src/plugins/cdk/mcp.json`
+Atlassian MCP for JIRA fetch and labeling:
+```json
+{
+  "mcpServers": {
+    "atlassian": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp"]
+    }
+  }
+}
+```
+
+### `src/plugins/cdk/settings-template.md`
+Provides `base_branch` for branch creation and later PR/review scope.
+
+### Runtime artifacts created
+
+**`.cdk/<ticket-id>/`** — empty directory for future research.md, plan.md, etc.
+
+**`.cdk/workflow-state.json`** — array format:
+```json
+[
+  {
+    "ticket_id": "PROJ-123",
+    "branch": "feat/PROJ-123-short-slug",
+    "stage": "started",
+    "active": true
+  }
+]
+```
+
+Valid stages: `started` → `researched` → `planned` → `implemented`
+
+## Integration
+
+- **Type:** Core workflow skill (stage 2)
+- **Requires:** onboard completed (recommended), git repo, JIRA MCP (optional)
+- **Invoked via:** `/cdk:start-ticket <ticket-id>`
+
+## Quality Bar
+
+- Legacy workflow-state migration documented
+- Uncommitted changes handling with 3 explicit options
+- Story readiness scoring with tiered responses
+- Base branch 3-tier resolution
+- JIRA labeling with non-blocking failure

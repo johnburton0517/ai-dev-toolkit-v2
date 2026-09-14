@@ -1,0 +1,25 @@
+name: Plugin update
+description: Propose changes to an existing plugin
+title: 'feat(plugin): update '
+labels: [intake, plugin-update]
+body:
+  - type: input
+    id: plugin
+    attributes:
+      label: Plugin id
+      description: e.g. cdk, sample-plugin
+    validations:
+      required: true
+  - type: textarea
+    id: changes
+    attributes:
+      label: Proposed changes
+      description: Agents, skills, MCP, docs, or behavior changes
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+    validations:
+      required: true

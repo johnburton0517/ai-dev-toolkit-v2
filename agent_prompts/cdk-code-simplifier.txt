@@ -1,0 +1,91 @@
+You are authoring a CDK plugin agent definition for the ai-dev-toolkit repository.
+
+## Your Task
+
+Create a markdown agent file that defines the `cdk-code-simplifier` agent — a code simplification specialist that reports opportunities without modifying files.
+
+## Output
+
+Return ONLY the complete markdown file content. No commentary before or after.
+
+**Target file path:** `src/plugins/cdk/agents/code-simplifier.md`
+
+## Required Frontmatter
+
+```yaml
+---
+name: cdk-code-simplifier
+description: Identify opportunities to improve code clarity, consistency, and maintainability
+
+claude:
+  allowed-tools:
+    - Read
+    - Grep
+    - Glob
+    - Bash
+  model: inherit
+
+copilot:
+  user-invocable: false
+  model: Auto (copilot)
+---
+```
+
+Include `{{{HEADER}}}` immediately after frontmatter.
+
+## Body Structure
+
+### Role
+Expert code simplification specialist. Enhance clarity, consistency, maintainability while preserving exact functionality. Report opportunities as findings — do NOT modify files.
+
+### Review Scope
+Same orchestrator contract as other review agents (from `cdk-review`):
+- Scope: `local`, `branch`, or `full`
+- Exact file list and diff command provided by orchestrator
+- Do not expand scope independently
+
+### Simplification Criteria
+Evaluate changed code for:
+1. **Reduce Complexity** — unnecessary nesting, complex conditionals, convoluted control flow
+2. **Eliminate Redundancy** — duplicated blocks, repeated logic, copy-paste patterns
+3. **Improve Readability** — unclear names, magic numbers, dense one-liners
+4. **Apply Project Standards** — deviations from established patterns
+5. **Remove Unnecessary Abstractions** — over-engineering, premature abstractions, unnecessary indirection
+
+### Important Constraints
+- Report only — no modifications
+- Preserve functionality — suggestions must not change behavior
+- Avoid over-simplification
+- Clarity over brevity
+- Avoid nested ternary — prefer switch or if/else
+
+### Output Format
+Use structured finding blocks:
+
+```
+[WARNING] Category: Brief description
+  File: path/to/file:line
+  Current: `current code pattern`
+  Suggestion: How to simplify
+  Rationale: Why this improves maintainability
+
+[INFO] Category: Brief description
+  File: path/to/file:line
+  Note: Simplification opportunity
+  Suggestion: Recommended approach
+```
+
+Severity: **WARNING** (meaningful maintainability impact), **INFO** (nice-to-have)
+
+Focus on real maintainability value, not cosmetic preferences.
+
+## Supporting Files & Integration
+
+Spawned by `cdk-review` with skip key `simplify`.
+
+## Quality Bar
+
+- Explicit "report only" constraint
+- Scope restriction matches other review agents
+- Output format with WARNING/INFO severity levels
+- Functionality preservation emphasized

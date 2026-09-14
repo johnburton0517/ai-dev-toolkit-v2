@@ -1,0 +1,118 @@
+You are authoring a CDK plugin skill definition for the ai-dev-toolkit repository.
+
+## Your Task
+
+Create the `cdk-implement` skill — implements code changes task-by-task following plan.md, verifies builds/tests, and checks acceptance criteria.
+
+## Output
+
+Return ONLY the complete markdown file content. No commentary before or after.
+
+**Target file path:** `src/plugins/cdk/skills/cdk-implement/SKILL.md`
+
+## Required Frontmatter
+
+```yaml
+---
+name: cdk-implement
+description: Implements code changes task-by-task following a plan.md spec, verifies builds and tests, and checks each acceptance criterion. Use when the user asks to implement, write code, or start coding on a planned ticket.
+---
+```
+
+Include `{{{HEADER}}}` after frontmatter.
+
+## Body Structure
+
+### Role
+IMPLEMENTATION AGENT working through spec task-by-task.
+Loop: implement task → verify → get feedback → next task.
+Stay focused on spec — no scope creep, unrelated refactors, or over-engineering.
+
+### Workflow Detection block
+Use `<workflow_detection>...</workflow_detection>` XML-style tags.
+
+Detection order:
+1. Read `.cdk/workflow-state.json` — example: `{ "ticket_id": "TICKET-123", "branch": "feat/TICKET-123-slug", "stage": "planned" }`
+2. Fall back to git branch name parsing (`feat/PROJ-123-description`)
+3. Fall back to `.cdk/<ticket-id>/plan.md` artifact scan
+
+If found: display "Workflow detected: TICKET-ID / Current stage: planned"
+If not: prompt to run `/cdk:start-ticket`
+
+**Required stage:** `planned`
+
+### Implementation Loop
+Use `<workflow>...</workflow>` tags.
+
+**Step 1: Load Context**
+- Read `.cdk/<ticket-id>/plan.md`
+- Parse YAML frontmatter if present: `files_to_modify`, `files_to_create`, `code_patterns`, `test_patterns`
+- Load "Context for Development" section for code style reference
+- Load "Acceptance Criteria" (Given/When/Then) for cross-checking
+- Load "Testing Strategy" for test tasks
+- Graceful fallback for older specs without frontmatter
+
+**Step 2: Implement All Tasks**
+- Work through "Implementation Tasks" section
+- Read Files, Changes, Details, Depends on per task
+- Follow dependency ordering
+- Use Context for Development patterns
+- Follow Testing Strategy for test tasks
+- No scope creep
+
+**Step 3: Report Progress**
+Show completed tasks and files changed. User can interrupt anytime.
+
+### Finalization section
+
+When ALL tasks complete:
+
+1. **Run verification** — build, test, lint commands from plan.md
+2. **Write implementation notes** — append to `.cdk/<ticket-id>/implementation-notes.md`
+3. **Verify acceptance criteria** — walk Given/When/Then; report Pass/Partial/Fail with file:line citations by category (Core, Error Handling, Edge Cases)
+
+### CHECKPOINT block
+Include:
+- Implementation complete message with task count
+- Files changed list
+- Verification status (build, test, lint)
+- Acceptance criteria score by category
+- Optional: review required for implementation-notes.md
+- Notes on deviations from spec
+- **Approval Required:** user must type "approved"
+- After approval, update workflow state to `"stage": "implemented"`
+- Core workflow progress line with ✅ on implement
+- Recommended next: `/cdk:commit`, `/cdk:review`, or `/cdk:create-pr`
+
+## Supporting Files
+
+### Input: `.cdk/<ticket-id>/plan.md`
+Created by cdk-plan. Must contain:
+- YAML frontmatter (tech_stack, files_to_modify, files_to_create, code_patterns, test_patterns)
+- Problem, Solution, Scope
+- Acceptance Criteria (Core, Error Handling, Edge Cases) in Given/When/Then
+- Design, Context for Development, Implementation Tasks, Testing Strategy, Verification
+
+### Output: `.cdk/<ticket-id>/implementation-notes.md`
+Append summary of what was built. Optional but recommended.
+
+### State update: `.cdk/workflow-state.json`
+After user approval:
+```json
+{ "ticket_id": "TICKET-123", "branch": "feat/TICKET-123-slug", "stage": "implemented" }
+```
+
+## Integration
+
+- **Type:** Core workflow skill (stage 5 of 5)
+- **Required prior stage:** `planned` (from cdk-plan)
+- **Spawns no sub-agents** — implements directly
+- **Invoked via:** `/cdk:implement`
+
+## Quality Bar
+
+- Workflow detection with 3 fallbacks
+- Explicit required stage gate
+- Loads and uses all plan.md sections including frontmatter
+- Acceptance criteria verification with Pass/Partial/Fail and file:line
+- User approval gate before stage transition

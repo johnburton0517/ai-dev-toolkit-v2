@@ -1,0 +1,29 @@
+pluginsDir: plugins/claude
+marketplaceDir: .claude-plugin
+marketplace:
+  name: ai-dev-toolkit
+  version: '2.0.0'
+  description: Enterprise-governed AI coding assistant plugins for Claude Code
+  owner:
+    name: John Burton
+    email: john.burton0517@example.com
+HEADER: |
+  > **CDK** — Core Development Kit skill. Invoke as `/cdk:{{name}}` in Claude Code.
+tools:
+  read_file: Use the Read tool
+  write_file: Use the Write tool
+  edit_file: Use the Edit tool
+  run_command: Use the Bash tool
+  search: Use Grep or search tools
+  search_files: Use Glob
+hooks:
+  events:
+    pre-tool-use: PreToolUse
+    post-tool-use: PostToolUse
+    session-start: SessionStart
+  pluginRoot: '${CLAUDE_PLUGIN_ROOT}'
+  pluginRootPattern: '${CLAUDE_PLUGIN_ROOT}'
+paths:
+  configDir: .claude
+agentManifest: .claude-plugin/plugin.json
+mcpOutput: .mcp.json

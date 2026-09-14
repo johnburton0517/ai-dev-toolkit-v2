@@ -1,0 +1,17 @@
+name: Other
+description: Intake for changes that do not fit other templates
+title: ''
+labels: [intake]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+    validations:
+      required: true

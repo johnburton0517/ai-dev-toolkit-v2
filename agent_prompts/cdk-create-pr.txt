@@ -1,0 +1,133 @@
+You are authoring a CDK plugin skill definition for the ai-dev-toolkit repository.
+
+## Your Task
+
+Create the `cdk-create-pr` skill — creates a GitHub pull request with structured, review-ready body from git diff, commits, and ticket context.
+
+## Output
+
+Return ONLY the complete markdown file content. No commentary before or after.
+
+**Target file path:** `src/plugins/cdk/skills/cdk-create-pr/SKILL.md`
+
+## Required Frontmatter
+
+```yaml
+---
+name: cdk-create-pr
+description: Creates a GitHub pull request with a structured, review-ready body populated from git diff, recent commits, and ticket context. Use when the user asks to create a PR, open a pull request, or submit their branch for review.
+---
+```
+
+Include `{{{HEADER}}}` after frontmatter.
+
+## Body Structure — 7-step Workflow
+
+### 1. Resolve base branch
+Priority order:
+1. `.cdk/settings.md` — `base_branch` frontmatter
+2. `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||'`
+3. Fallback: `main`
+
+Store as `BASE_BRANCH`.
+
+### 2. Check git state
+- On feature branch (not `$BASE_BRANCH`)
+- Working tree clean before PR creation
+- Push: `git push -u origin HEAD`
+
+### 3. Check for existing PR
+- `gh pr list --head "$(git rev-parse --abbrev-ref HEAD)" --json number,url,title,state`
+- If exists, return that PR instead of creating duplicate
+
+### 4. Detect repo PR template
+Check in order:
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/pull_request_template.md`
+- `docs/pull_request_template.md`
+- `.github/PULL_REQUEST_TEMPLATE/` directory (use first/default)
+
+If found: use as body skeleton, populate from git diff/commits/ticket — no unfilled placeholders.
+If not found: use default template below.
+
+### 5. Generate PR content
+- Title: concise summary with ticket ID when available
+- Body: repo template or default, populated from context
+
+**Default PR Body Template:**
+```markdown
+## Summary
+- <1-3 bullets>
+
+## Changes
+- <major changes>
+
+## Validation
+- <tests/lint/build run>
+- <result summary>
+
+## Risks / Notes
+- <risk or `None`>
+
+## Follow-ups
+- <follow-up or `None`>
+```
+
+Formatting rules: keep section order; bullets over paragraphs; short bullets; use `None` for empty sections.
+
+### 6. Create PR (robust, cleanup-safe)
+```bash
+PR_BODY_FILE="$(mktemp -t cdk-pr-body-XXXXXX.md)"
+printf "%s" "$PR_BODY" > "$PR_BODY_FILE"
+gh pr create --title "[TICKET-ID] Title" --body-file "$PR_BODY_FILE" --base "$BASE_BRANCH"
+rm -f "$PR_BODY_FILE"
+```
+- Add `--draft` if requested
+- No interactive editors or multiline heredocs
+- Temp files via mktemp outside repo
+
+### 7. Verify and report
+- Confirm PR URL/number
+- Confirm workspace clean (`git status -sb`)
+
+### CHECKPOINT
+```
+> PR created: #<number>
+> URL: <url>
+>
+> **Next steps:**
+> 1. Wait for CI to pass
+> 2. Request reviewers
+> 3. When comments arrive, run `/cdk:fix-review`
+```
+
+## Supporting Files
+
+### Plugin-level: `src/plugins/cdk/settings-template.md`
+Document that users copy this to `.cdk/settings.md`:
+```yaml
+---
+base_branch: main
+---
+```
+This skill reads `base_branch` from that file.
+
+### Runtime artifacts
+None persisted by this skill (PR lives on GitHub).
+
+### External dependencies
+- GitHub CLI (`gh`) required
+- Repo may supply its own PR template (detected in step 4)
+
+## Integration
+
+- **Type:** Utility skill — no workflow stage checks
+- **Invoked via:** `/cdk:create-pr`
+- **Reads:** `.cdk/settings.md`, git state, optional ticket context from branch name or workflow state
+
+## Quality Bar
+
+- Base branch resolution with 3-tier fallback
+- Duplicate PR detection before creation
+- mktemp pattern avoids shell quoting issues and repo pollution
+- Default PR template with all five sections

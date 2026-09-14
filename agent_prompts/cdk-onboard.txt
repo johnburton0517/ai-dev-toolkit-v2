@@ -1,0 +1,149 @@
+You are authoring a CDK plugin skill definition for the ai-dev-toolkit repository.
+
+## Your Task
+
+Create the `cdk-onboard` skill — introduces the CDK workflow and validates the development environment.
+
+## Output
+
+Return ONLY the complete markdown file content. No commentary before or after.
+
+**Target file path:** `src/plugins/cdk/skills/cdk-onboard/SKILL.md`
+
+## Required Frontmatter
+
+```yaml
+---
+name: cdk-onboard
+description: Introduces the cdk workflow and validates the development environment including git, GitHub CLI, Atlassian MCP, and .cdk settings. Use when the user is new to cdk, wants to set up the workflow, or asks how to get started.
+---
+```
+
+Include `{{{HEADER}}}` after frontmatter.
+
+## Body Structure — 4 Phases
+
+### Phase 1: Introduction
+
+**Execution contract (must follow in order):**
+1. Display full Phase 1 overview tables first
+2. Ask Phase 2 confirmation
+3. Only after explicit user confirmation, run Phase 3 checks
+4. Do NOT run environment checks before Phase 1 + Phase 2 complete
+
+Welcome message + workflow overview:
+
+**Core Workflow table** (5 steps):
+| Step | Skill | Purpose |
+| 1 | `/cdk:onboard` | You are here; validate environment |
+| 2 | `/cdk:start-ticket <ticket-id>` | Fetch JIRA, score readiness, create branch |
+| 3 | `/cdk:research` | Explore codebase |
+| 4 | `/cdk:plan` | Create implementation plan |
+| 5 | `/cdk:implement` | Write code |
+
+**Utility Skills table** (8 skills):
+switch-ticket, commit, review, create-pr, fix-review, provide-feedback, report-issue
+
+### Phase 2: Confirmation
+Ask: "Ready to validate your environment for cdk?"
+
+### Phase 3: Environment Validation
+Use `<activation>` tags. Run checks in order:
+
+**Check 1: Git Repository**
+- `git rev-parse --git-dir`
+- FAIL → "Run `git init`"
+
+**Check 2: GitHub CLI (Optional)**
+- `gh --version`
+- WARNING → needed for create-pr; install with brew
+
+**Check 3: Settings File**
+- Look for `.cdk/settings.md`
+- If missing, offer to create from template
+
+**Check 4: Atlassian MCP (Optional)**
+- Test MCP connectivity
+- WARNING → can paste ticket details manually
+
+**Check 5: Gitignore Entry**
+- Check `.gitignore` for `.cdk`
+- If missing, append and commit:
+  ```bash
+  grep -qxF '.cdk' .gitignore 2>/dev/null || printf '\n.cdk\n' >> .gitignore
+  git add .gitignore
+  git commit -m "chore: ignore .cdk workflow directory"
+  ```
+
+**Check 6: Copilot Plugin Files** (conditional block):
+```
+{{#copilot}}
+... check .github/ for uncommitted plugin files ...
+... ask user to commit or defer ...
+{{/copilot}}
+```
+
+### Phase 4: Ready State
+Display status table with Check / Status / Notes columns.
+Overall: READY or NOT READY.
+
+### END STATE
+If READY: next skill is `/cdk:start-ticket <TICKET-ID>` with workflow progress line.
+If NOT READY: fix issues and re-run onboard.
+
+Include core workflow progress and utility skills list in blockquote.
+
+## Supporting Files
+
+### `src/plugins/cdk/settings-template.md`
+Plugin-level template users copy to `.cdk/settings.md`:
+
+```markdown
+---
+base_branch: main
+---
+
+# Project-Specific Configuration
+
+## Git Workflow
+- Base branch for PRs: main
+- Branch naming: feat/<ticket>-<summary>
+
+## Notes
+Add any project-specific workflow notes here.
+```
+
+Onboard Check 3 offers to create `.cdk/settings.md` from this template.
+
+### `src/plugins/cdk/mcp.json`
+Plugin MCP config for Atlassian JIRA:
+```json
+{
+  "mcpServers": {
+    "atlassian": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp"]
+    }
+  }
+}
+```
+
+Onboard Check 4 tests this MCP connectivity.
+
+### Runtime artifacts created during onboard
+- `.cdk/settings.md` (if user accepts)
+- `.gitignore` entry for `.cdk` (if missing)
+- `.cdk/` directory structure (implicit)
+
+## Integration
+
+- **Type:** Core workflow skill (step 1 — run once per project)
+- **Invoked via:** `/cdk:onboard`
+- **Mustache conditional:** `{{#copilot}}...{{/copilot}}` for Check 6
+
+## Quality Bar
+
+- Strict 4-phase execution contract (no checks before confirmation)
+- All 5 (+1 conditional) environment checks with PASS/WARNING/FAIL semantics
+- References settings-template.md and mcp.json behavior
+- END STATE with clear next step

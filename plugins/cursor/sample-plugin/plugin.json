@@ -1,0 +1,8 @@
+{
+  "name": "sample-plugin",
+  "description": "Reference plugin demonstrating agents, skills, and build conventions",
+  "version": "1.0.0",
+  "skills": [
+    "skills/sample-greet"
+  ]
+}

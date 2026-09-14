@@ -1,0 +1,25 @@
+{
+  "name": "ai-dev-toolkit",
+  "owner": {
+    "name": "John Burton",
+    "email": "john.burton0517@example.com"
+  },
+  "metadata": {
+    "description": "Enterprise-governed AI coding assistant plugins for Cursor",
+    "version": "2.0.0"
+  },
+  "plugins": [
+    {
+      "name": "cdk",
+      "description": "Core development workflow plugin — structured dev loop with GitHub Issues integration, file-based task tracking, multi-agent code review, and PR management",
+      "version": "2.0.0",
+      "source": "./plugins/cursor/cdk"
+    },
+    {
+      "name": "sample-plugin",
+      "description": "Reference plugin demonstrating agents, skills, and build conventions",
+      "version": "1.0.0",
+      "source": "./plugins/cursor/sample-plugin"
+    }
+  ]
+}

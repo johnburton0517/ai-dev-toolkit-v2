@@ -1,0 +1,24 @@
+name: New ecosystem
+description: Propose a new build target or marketplace ecosystem
+title: 'feat(ecosystem): '
+labels: [intake, new-ecosystem]
+body:
+  - type: input
+    id: ecosystem
+    attributes:
+      label: Ecosystem name
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: Manifest format, agent/skill naming, MCP/hooks differences
+    validations:
+      required: true
+  - type: textarea
+    id: docs
+    attributes:
+      label: Documentation links
+    validations:
+      required: false

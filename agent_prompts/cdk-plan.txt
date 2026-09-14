@@ -1,0 +1,139 @@
+You are authoring a CDK plugin skill definition for the ai-dev-toolkit repository.
+
+## Your Task
+
+Create the `cdk-plan` skill — creates an implementation spec (plan.md) using the cdk-code-architect agent, with iterative user review.
+
+## Output
+
+Return ONLY the complete markdown file content. No commentary before or after.
+
+**Target file path:** `src/plugins/cdk/skills/cdk-plan/SKILL.md`
+
+## Required Frontmatter
+
+```yaml
+---
+name: cdk-plan
+description: Creates an implementation spec (plan.md) from research findings using the cdk-code-architect agent, with iterative user review. Use when the user asks to plan, create a spec, or prepare an implementation plan for a ticket.
+---
+```
+
+Include `{{{HEADER}}}` after frontmatter.
+
+## Body Structure
+
+### Role
+PLANNING AGENT pairing with user to create clear, actionable spec. Iterate: context gathering → drafting → refining.
+
+### Stopping Rules
+Use `<stopping_rules>` tags:
+- NEVER implement
+- STOP IMMEDIATELY if considering editing files, writing code, or switching to implementation mode
+- Specs describe steps for `/cdk:implement` to execute later
+
+### Workflow Detection
+Same pattern as other core skills:
+1. Read `.cdk/workflow-state.json` — required stage: `researched`
+2. Fall back to git branch
+3. Fall back to `.cdk/<ticket-id>/research.md` scan
+
+Display detected ticket/stage or prompt for start-ticket.
+
+### Iterative Workflow
+Use `<workflow>` tags. Loop:
+
+**Step 1: Context Gathering**
+MANDATORY: Spawn `cdk-code-architect` agent with input:
+- Research: `.cdk/<ticket-id>/research.md` (Tech Stack, Test Patterns, Context for Development)
+- Acceptance criteria from ticket/user
+- Constraints
+
+Expected blueprint output: Problem/Solution/Scope, Given/When/Then AC, Design, Context for Development, dependency-ordered tasks, Testing Strategy, Verification commands.
+
+If agent unavailable, gather context via tools yourself.
+
+**Step 2: Write and Present Spec**
+Use blueprint + `<spec_style_guide>` to draft spec.
+Run `<ready_for_dev_check>` and fix failures.
+Write to `.cdk/<ticket-id>/plan.md`.
+
+CHECKPOINT with: output path, task count, AC count, open questions count, review required, approval required.
+
+**Step 3: Handle User Feedback**
+Revise spec, rewrite file, re-present checkpoint.
+
+### Spec Style Guide
+Use `<spec_style_guide>` tags with complete plan.md template:
+
+```markdown
+---
+tech_stack: []
+files_to_modify: []
+files_to_create: []
+code_patterns: []
+test_patterns: []
+---
+
+# Spec: {Task title (2-10 words)}
+
+## Problem
+## Solution
+## Scope (In Scope / Out of Scope)
+## Acceptance Criteria (Core / Error Handling / Edge Cases — Given/When/Then)
+## Design
+## Context for Development (Codebase Patterns, Files to Reference table, Technical Decisions)
+## Implementation Tasks (dependency-ordered with Files, Changes, Details, Depends on)
+## Testing Strategy
+## Verification (Build, Test, Lint commands)
+## Open Questions (0-3, only if blocking)
+```
+
+Rules:
+- Every task MUST reference at least one file path
+- AC MUST use Given/When/Then
+- Testing strategy REQUIRED when modifying files
+- Self-contained for fresh implement agent
+- NO code blocks — describe changes, link files/symbols
+- NO manual testing unless requested
+- NO implementation — spec only
+- Scannable in 30 seconds
+
+### Ready for Development Check
+Use `<ready_for_dev_check>` tags:
+Checklist: Actionable, Logical, Testable, Complete, Self-Contained
+Stats: N tasks, N AC, N files to modify, N files to create
+Fix failures before presenting.
+
+### Finalization
+After user approval, update workflow state to `"stage": "planned"`.
+Progress line: ✅ plan → ➡️ implement
+Recommended next: `/cdk:implement`
+
+## Supporting Files
+
+### Input: `.cdk/<ticket-id>/research.md`
+Created by cdk-research. Required for architect agent input.
+
+### Output: `.cdk/<ticket-id>/plan.md`
+Full spec per spec_style_guide template above. This is the primary deliverable.
+
+### Agent dependency: `cdk-code-architect`
+Defined in `src/plugins/cdk/agents/code-architect.md`. Spawned in step 1.
+
+### State: `.cdk/workflow-state.json`
+Updated to `"stage": "planned"` after approval.
+
+## Integration
+
+- **Type:** Core workflow skill (stage 4)
+- **Required prior stage:** `researched`
+- **Spawns:** cdk-code-architect agent
+- **Invoked via:** `/cdk:plan`
+
+## Quality Bar
+
+- Explicit stopping rules preventing implementation
+- Complete plan.md template embedded in skill
+- Ready for dev checklist with 5 criteria
+- Iterative feedback loop with CHECKPOINT and approval gate

@@ -1,0 +1,33 @@
+name: New plugin
+description: Propose a new marketplace plugin
+title: 'feat(plugin): '
+labels: [intake, new-plugin]
+body:
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose
+      description: What problem does this plugin solve?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Planned agents, skills, MCP, and ecosystems
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Proposed risk level
+      options: [low, medium, high]
+    validations:
+      required: true
+  - type: textarea
+    id: owner
+    attributes:
+      label: Owner
+      description: Name and email for plugin.yaml
+    validations:
+      required: true

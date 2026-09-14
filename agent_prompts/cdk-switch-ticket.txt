@@ -1,0 +1,130 @@
+You are authoring a CDK plugin skill definition for the ai-dev-toolkit repository.
+
+## Your Task
+
+Create the `cdk-switch-ticket` skill — switches active ticket context, preserving all in-flight ticket states.
+
+## Output
+
+Return ONLY the complete markdown file content. No commentary before or after.
+
+**Target file path:** `src/plugins/cdk/skills/cdk-switch-ticket/SKILL.md`
+
+## Required Frontmatter
+
+```yaml
+---
+name: cdk-switch-ticket
+description: Switches the active ticket context by updating .cdk/workflow-state.json and checking out the target branch, preserving all other in-flight ticket contexts. Use when the user wants to switch tickets, change the active story, or resume work on a different branch.
+---
+```
+
+Include `{{{HEADER}}}` after frontmatter.
+
+## Body Structure
+
+### 6-step Workflow
+
+**1. Read current state**
+- Read `.cdk/workflow-state.json`
+- If missing/empty: inform no tickets tracked, exit
+- If root is object (not array): migrate silently to `[ { ...existingObject, "active": true } ]`
+
+**2. Show available tickets**
+Display table:
+```
+| Ticket | Branch | Stage | Active |
+```
+
+**3. Resolve target ticket**
+- Use `<ticket-id>` argument if provided
+- If already active: inform and exit (no change)
+- If no argument: ask user which ticket
+- If not in array: suggest `/cdk:start-ticket <ticket-id>`
+
+**4. Handle uncommitted changes**
+Run `git status --porcelain`. If dirty, pause with 3 options:
+1. Stash — `git stash push -m "WIP on <current-branch>"`
+2. WIP commit — `git add -A && git commit -m "chore: WIP <description>"`
+3. Abort — stay on current ticket
+
+Wait for user choice.
+
+**5. Switch git branch**
+```bash
+git checkout <target-branch>
+```
+
+**6. Update workflow state**
+Set all `"active": false`. Set target `"active": true`.
+
+Example result:
+```json
+[
+  { "ticket_id": "TICKET-123", "branch": "feat/TICKET-123-slug", "stage": "implemented", "active": false },
+  { "ticket_id": "TICKET-456", "branch": "feat/TICKET-456-slug", "stage": "planned", "active": true }
+]
+```
+
+### CHECKPOINT
+Report: switched ticket, branch, stage.
+Show all tracked tickets table with active marker.
+Recommend next skill based on stage (e.g., `/cdk:plan` for `planned`, `/cdk:implement` for `planned`, etc.)
+
+Stage-to-skill mapping to document:
+- `started` → `/cdk:research`
+- `researched` → `/cdk:plan`
+- `planned` → `/cdk:implement`
+- `implemented` → `/cdk:commit`, `/cdk:review`, or `/cdk:create-pr`
+
+## Supporting Files
+
+### `.cdk/workflow-state.json`
+JSON **array** (not single object) — critical format:
+
+```json
+[
+  {
+    "ticket_id": "PROJ-123",
+    "branch": "feat/PROJ-123-slug",
+    "stage": "planned",
+    "active": true
+  },
+  {
+    "ticket_id": "PROJ-456",
+    "branch": "feat/PROJ-456-other",
+    "stage": "started",
+    "active": false
+  }
+]
+```
+
+Fields per entry:
+- `ticket_id` — JIRA key
+- `branch` — feature branch name
+- `stage` — workflow stage
+- `active` — boolean, exactly one true at a time
+
+### Per-ticket context directories
+`.cdk/<ticket-id>/` preserved when switching:
+- `research.md`
+- `plan.md`
+- `implementation-notes.md`
+
+Switching does NOT delete or merge context — only changes active flag and git branch.
+
+**No additional committed source files.**
+
+## Integration
+
+- **Type:** Utility skill
+- **Invoked via:** `/cdk:switch-ticket <ticket-id>`
+- **Pairs with:** cdk-start-ticket (creates entries this skill switches between)
+
+## Quality Bar
+
+- Array-format workflow state with legacy migration
+- Uncommitted changes handling (same 3 options as start-ticket)
+- Shows all tickets before/after switch
+- Stage-to-next-skill recommendation in CHECKPOINT
+- No data loss — all in-flight contexts preserved

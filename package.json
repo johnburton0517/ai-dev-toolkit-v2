@@ -1,0 +1,53 @@
+{
+  "name": "ai-dev-toolkit",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Enterprise plugin marketplace for Claude Code, GitHub Copilot, and Cursor",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "lint": "npm run lint:js && npm run lint:yaml",
+    "lint:js": "eslint scripts tests",
+    "lint:yaml": "npx yaml-lint 'config/*.yml' 'src/plugins/**/plugin.yaml'",
+    "format": "prettier --write \"scripts/**/*.js\" \"tests/**/*.js\" \"*.js\" \"*.json\" \"config/*.yml\"",
+    "format:check": "prettier --check \"scripts/**/*.js\" \"tests/**/*.js\" \"*.js\" \"*.json\" \"config/*.yml\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "scripts/**/*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "tests/**/*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "config/*.yml": [
+      "npx yaml-lint"
+    ],
+    "src/plugins/**/plugin.yaml": [
+      "npx yaml-lint"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0",
+    "gray-matter": "^4.0.3",
+    "husky": "^9.1.7",
+    "js-yaml": "^4.1.0",
+    "lint-staged": "^15.2.11",
+    "mustache": "^4.2.0",
+    "prettier": "^3.4.2",
+    "vitest": "^2.1.8",
+    "yaml-lint": "^1.7.0"
+  }
+}

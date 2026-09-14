@@ -1,0 +1,503 @@
+You are creating the **ai-dev-toolkit** repository from scratch — a plugin marketplace that transforms source agent/skill primitives into installable plugins for Claude Code, GitHub Copilot, and Cursor.
+
+## Your Task
+
+Design and implement the complete repository: build tooling, config, marketplace manifests, documentation, quality gates, and at minimum one fully-featured plugin (the **CDK — Core Development Kit** plugin). The result must match the architecture and conventions described below.
+
+Work in phases. For each phase, produce the files listed. Return file paths and complete file contents. Do not skip validation tooling or tests for the build pipeline.
+
+---
+
+## Project Purpose
+
+**ai-dev-toolkit** is a single-repo marketplace for enterprise-governed AI coding assistant plugins.
+
+- **Source of truth:** `src/plugins/<plugin-id>/` — agents, skills, MCP config authored as Mustache-templated markdown
+- **Build output:** `plugins/claude/`, `plugins/copilot/`, `plugins/cursor/` — committed artifacts teams install directly
+- **Marketplace manifests:** `.claude-plugin/`, `.github/plugin/`, `.cursor-plugin/` — point installers at built plugins
+- **No separate registry** — the repo itself is the marketplace
+
+### Core Architecture
+
+```
+src/plugins/<plugin-id>/          config/{claude,copilot,cursor}.yml
+         │                                    │
+         └──────────────┬─────────────────────┘
+                        ▼
+              scripts/build.js (Mustache render + transforms)
+                        │
+         ┌──────────────┼──────────────┐
+         ▼              ▼              ▼
+  plugins/claude/  plugins/copilot/  plugins/cursor/
+         │              │              │
+         ▼              ▼              ▼
+  .claude-plugin/  .github/plugin/  .cursor-plugin/
+  marketplace.json marketplace.json marketplace.json
+```
+
+---
+
+## Phase 1: Repository Scaffold
+
+Create the root project structure:
+
+```
+ai-dev-toolkit/
+├── .claude-plugin/
+│   ├── marketplace.json
+│   └── README.md
+├── .cursor-plugin/
+│   ├── marketplace.json
+│   └── README.md
+├── .github/
+│   ├── plugin/
+│   │   ├── marketplace.json
+│   │   └── README.md
+│   ├── workflows/
+│   │   ├── pr-validation.yml
+│   │   └── issue-intake.yml
+│   ├── ISSUE_TEMPLATE/          # new-plugin, plugin-update, new-mcp, new-ecosystem, other
+│   └── dependabot.yml
+├── .husky/
+│   ├── pre-commit               # lint-staged
+│   ├── commit-msg               # commitlint
+│   └── pre-push                 # npm test
+├── config/
+│   ├── schema.md                # Frontmatter contract & token spec (authoritative)
+│   ├── claude.yml
+│   ├── copilot.yml
+│   └── cursor.yml
+├── docs/
+│   ├── prerequisites.md
+│   ├── installing.md
+│   └── intake.md
+├── scripts/
+│   ├── build.js                 # Orchestrator — wipes plugins/ and rebuilds all targets
+│   └── lib/
+│       ├── plugins.js           # Discovery, config loading, file finding
+│       ├── render.js            # Mustache rendering with frontmatter parsing
+│       ├── validate.js          # Schema/frontmatter validation
+│       ├── build-claude.js
+│       ├── build-copilot.js
+│       ├── build-cursor.js
+│       ├── transform-claude.js  # Hooks/MCP transforms
+│       ├── transform-copilot.js
+│       └── transform-cursor.js
+├── src/plugins/                 # Source primitives (single source of truth)
+├── tests/unit/build/            # Vitest tests for build modules
+├── agent_prompts/               # Prompt library for recreating primitives (see Phase 5)
+├── plugins/                     # Build output (generated, then committed)
+├── package.json
+├── package-lock.json
+├── vitest.config.js
+├── eslint.config.js
+├── commitlint.config.js
+├── .prettierrc
+├── .prettierignore
+├── .gitignore
+├── CLAUDE.md                    # AI assistant dev guide
+├── README.md
+└── contributing.md
+```
+
+### package.json requirements
+
+- `"type": "module"` (ESM)
+- Node >= 18
+- Scripts: `build`, `lint`, `lint:js`, `lint:yaml`, `format`, `format:check`, `test`, `test:watch`, `test:coverage`, `prepare` (husky)
+- DevDependencies: mustache, js-yaml, gray-matter, vitest, eslint, prettier, husky, lint-staged, commitlint, yaml-lint
+- lint-staged: auto-format/lint scripts, config yml, plugin.yaml files
+
+### Build orchestrator (scripts/build.js)
+
+- Wipe `plugins/` directory on each build (clean slate)
+- Discover plugins from `src/plugins/` via `loadPlugins()` — skip plugins with `publish: false`
+- Support targets: `claude`, `copilot`, `cursor` (all by default, or single target via CLI arg)
+- Load per-target config from `config/{target}.yml`
+- Delegate to `buildClaude`, `buildCopilot`, `buildCursor`
+- Generate marketplace.json manifests in `.claude-plugin/`, `.github/plugin/`, `.cursor-plugin/`
+
+### Config files (config/*.yml)
+
+Each ecosystem config must define:
+
+| Key | Purpose |
+| --- | ------- |
+| `pluginsDir` | Output root (e.g. `plugins/claude`) |
+| `marketplaceDir` | Manifest directory |
+| `marketplace` | Name, version, owner, description |
+| `HEADER` | Mustache template for `{{{HEADER}}}` token replacement |
+| `tools` | Map of tool keys → ecosystem-specific invocation text |
+| `hooks.events` | Common kebab-case → ecosystem-specific event names |
+| `hooks.pluginRoot` / `pluginRootPattern` | Plugin root variable for hook scripts |
+| `paths.configDir` | Ecosystem config dir (`.claude`, `.github`, `.cursor`) |
+
+Tool keys available for `{{{tools.read_file}}}` etc.: `read_file`, `write_file`, `edit_file`, `run_command`, `search`, `search_files`
+
+### Schema (config/schema.md)
+
+Document the authoritative contract:
+
+**plugin.yaml fields:** name, version, description, owner, risk (low|medium|high), compliance (array), tags, goals, publish (boolean, default true)
+
+**Primitive frontmatter:** name, description, optional deprecated/supersededBy, ecosystem blocks (`claude:`, `copilot:`, `cursor:`)
+
+**Mustache tokens:**
+- `{{{HEADER}}}` — triple braces, unescaped
+- `{{{tools.<key>}}}` — tool invocation text
+- `{{#claude}}...{{/claude}}` — conditional sections
+
+**Skills layout:** nested subdirectories per skill with `SKILL.md` entry point; optional `scripts/`, `references/`, `assets/`
+
+**Hooks/MCP:** common source format in `hooks/hooks.json` and `mcp.json`, transformed per ecosystem
+
+---
+
+## Phase 2: Build Pipeline Implementation
+
+Implement modular build with these responsibilities:
+
+### plugins.js
+- `loadConfig(root, target)` — parse YAML config
+- `loadPlugins(pluginsDir)` — discover directories with plugin.yaml, filter by publish
+- `findTemplates(dir)` — recursive .md discovery
+- `findFiles(dir)` — recursive all-file discovery
+
+### render.js
+- Parse YAML frontmatter with gray-matter
+- Render body through Mustache with context: frontmatter fields, tools map, ecosystem flags (claude/copilot/cursor booleans), paths
+- Validate required frontmatter (name, description)
+
+### validate.js
+- Required fields present
+- Valid semver in plugin.yaml
+- Valid email for owner
+- Known risk level
+- At least one compliance tag
+- No forbidden ecosystem-specific syntax leaking into wrong targets
+
+### build-{claude,copilot,cursor}.js
+Each builder must:
+- Copy/render agents from `src/plugins/<id>/agents/*.md` to ecosystem-appropriate output paths and filenames
+- Copy/render skills preserving directory structure under `skills/<skill-name>/SKILL.md`
+- Copy non-markdown supporting files (scripts, templates, assets) unchanged
+- Transform and emit MCP config (`.mcp.json` for Claude, `mcp.json` for Cursor, merged config for Copilot)
+- Transform and emit hooks if present
+- Copy settings-template.md, README.md if present
+- Emit per-plugin manifest (plugin.json)
+
+**Naming conventions:**
+- Claude agents: `plugins/claude/<id>/agents/<frontmatter-name>.md`
+- Copilot agents: `plugins/copilot/<id>/agents/<frontmatter-name>.agent.md`
+- Cursor agents: `plugins/cursor/<id>/agents/<frontmatter-name>.md`
+- Skills: preserve `skills/<skill-dir>/SKILL.md` structure in all targets
+
+### transform-{claude,copilot,cursor}.js
+- Map common hook events to ecosystem-specific names
+- Replace `${PLUGIN_ROOT}` / plugin root patterns
+- Strip or merge ecosystem-specific MCP overrides
+- Apply Copilot defaults (type: local, tools: ["*"])
+
+### Tests (tests/unit/build/)
+Write Vitest unit tests for:
+- Plugin discovery and publish filtering
+- Mustache rendering (HEADER, tools, conditionals)
+- Frontmatter validation
+- Each build target (agent naming, skill structure, MCP transform)
+- Hook event mapping
+
+Exclude `plugins/` from test runs (vitest.config.js).
+
+---
+
+## Phase 3: CDK Plugin (Core Development Kit)
+
+Create the flagship plugin at `src/plugins/cdk/`. This is the primary deliverable.
+
+### Plugin metadata (plugin.yaml)
+
+```yaml
+name: cdk
+version: 2.0.0
+description: Core development workflow plugin — structured dev loop with JIRA integration,
+  file-based task tracking, multi-agent code review, and PR management
+owner: John Burton
+risk: low
+compliance:
+  - approved
+tags:
+  - development
+  - workflow
+  - jira
+  - code-review
+  - pull-request
+  - conventional-commits
+goals:
+  - Structured development workflow from ticket to PR
+  - JIRA integration for story/ticket context
+  - File-based task tracking for progress management
+  - Multi-agent code review
+  - Conventional commit message formatting
+```
+
+### Plugin-level supporting files
+
+**mcp.json** — Atlassian MCP for JIRA:
+```json
+{
+  "mcpServers": {
+    "atlassian": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp"]
+    }
+  }
+}
+```
+
+**settings-template.md** — Template for user projects:
+```yaml
+---
+base_branch: main
+---
+# Project-Specific Configuration
+## Git Workflow
+- Base branch for PRs: main
+- Branch naming: feat/<ticket>-<summary>
+```
+
+**README.md** — End-user documentation covering workflow, skills, agents, MCP, configuration.
+
+### Agents (9) — src/plugins/cdk/agents/
+
+| File | Name | Spawned by |
+| ---- | ---- | ---------- |
+| code-architect.md | cdk-code-architect | cdk-plan |
+| code-explorer.md | cdk-code-explorer | cdk-research |
+| web-researcher.md | cdk-web-researcher | cdk-research |
+| code-reviewer.md | cdk-code-reviewer | cdk-review |
+| code-simplifier.md | cdk-code-simplifier | cdk-review |
+| comment-analyzer.md | cdk-comment-analyzer | cdk-review |
+| test-analyzer.md | cdk-test-analyzer | cdk-review |
+| silent-failure-hunter.md | cdk-silent-failure-hunter | cdk-review |
+| type-design-analyzer.md | cdk-type-design-analyzer | cdk-review |
+
+All review agents share the orchestrator contract: scope + file list + diff command from `cdk-review`. All agents use `copilot.user-invocable: false`.
+
+Use the individual prompts in `agent_prompts/cdk-*.txt` to generate each agent file. Generate agents BEFORE skills that spawn them.
+
+### Skills (13) — src/plugins/cdk/skills/<name>/SKILL.md
+
+**Core workflow (must run in order):**
+
+| Skill | Stage gate | Key output |
+| ----- | ---------- | ---------- |
+| cdk-onboard | none (run once) | Validates environment, creates .cdk/settings.md |
+| cdk-start-ticket | none | Creates branch, .cdk/<ticket-id>/, workflow-state.json |
+| cdk-research | `started` | .cdk/<ticket-id>/research.md |
+| cdk-plan | `researched` | .cdk/<ticket-id>/plan.md |
+| cdk-implement | `planned` | Code changes, implementation-notes.md |
+
+**Utility skills (anytime):**
+
+| Skill | Purpose |
+| ----- | ------- |
+| cdk-help | Display workflow overview |
+| cdk-switch-ticket | Switch active ticket context |
+| cdk-commit | Conventional git commit |
+| cdk-review | Parallel 6-agent code review |
+| cdk-create-pr | GitHub PR with structured body |
+| cdk-fix-review | Address PR review comments |
+| cdk-provide-feedback | GitHub Discussion in ai-dev-toolkit |
+| cdk-report-issue | GitHub Issue in ai-dev-toolkit |
+
+Use the individual prompts in `agent_prompts/cdk-*.txt` to generate each skill file.
+
+### CDK Workflow State Model
+
+`.cdk/workflow-state.json` is a JSON **array**:
+
+```json
+[
+  {
+    "ticket_id": "PROJ-123",
+    "branch": "feat/PROJ-123-short-slug",
+    "stage": "started",
+    "active": true
+  }
+]
+```
+
+Stages: `started` → `researched` → `planned` → `implemented`
+
+Per-ticket artifacts in `.cdk/<ticket-id>/`:
+- `research.md` — codebase findings (written by cdk-research)
+- `plan.md` — implementation spec with YAML frontmatter (written by cdk-plan)
+- `implementation-notes.md` — build summary (written by cdk-implement)
+
+### CDK Skill Conventions
+
+- All skills: `{{{HEADER}}}` after frontmatter
+- Workflow skills: `<workflow_detection>` blocks, required stage gates, user approval CHECKPOINTs
+- Utility skills: note "runs anytime, no workflow status checks" where applicable
+- `<CHECKPOINT>` blocks for user-facing completion messages
+- `{{#copilot}}...{{/copilot}}` for ecosystem-specific checks (e.g. cdk-onboard Check 6)
+
+---
+
+## Phase 4: Sample Plugin & Documentation
+
+### sample-plugin (src/plugins/sample-plugin/)
+
+Minimal reference plugin for contributors demonstrating:
+- plugin.yaml
+- One agent with frontmatter and {{{HEADER}}}
+- One skill with SKILL.md
+- Optional scripts/, references/, assets/ subdirectories under skills
+- README.md
+
+### Root documentation
+
+**README.md:**
+- Project purpose (enterprise plugin marketplace)
+- Available plugins table
+- Install links (docs/installing.md)
+- Contribute links (docs/intake.md, contributing.md)
+- Repository layout diagram
+
+**contributing.md:**
+- Intake process (issue required before PR)
+- Plugin structure
+- Frontmatter requirements
+- Build commands
+- Conventional commit format
+
+**CLAUDE.md:**
+- Build/lint/test commands
+- Project structure
+- Architecture (source → build → marketplace)
+- Plugin structure and naming conventions
+- Placeholder tokens and conditional blocks
+
+**docs/prerequisites.md, docs/installing.md, docs/intake.md:**
+- Per-ecosystem install instructions (Claude, Copilot, Cursor)
+- Prerequisites and marketplace setup
+- Intake review criteria
+
+---
+
+## Phase 5: Agent Prompts Library
+
+Create `agent_prompts/` with:
+
+- `README.md` — usage guide, dependency map, supporting files reference, generation order
+- `create-project-from-scratch.txt` — this prompt (self-referential)
+- One `.txt` prompt per CDK agent (9 files) and skill (13 files)
+
+Each individual prompt must specify:
+- Target output path
+- Required frontmatter
+- Body structure and sections
+- Supporting/runtime files
+- Integration with other primitives
+
+See `agent_prompts/README.md` for the complete file list.
+
+---
+
+## Phase 6: Quality Gates & CI
+
+### Git hooks (.husky/)
+- **pre-commit:** lint-staged (eslint + prettier on scripts, yaml-lint on config/plugin.yaml)
+- **commit-msg:** commitlint conventional commits (`feat:`, `fix:`, `docs:`, etc.)
+- **pre-push:** `npm test`
+
+### GitHub Actions
+- **pr-validation.yml:** Run lint, test, build on PRs; verify plugins/ output matches source
+- **issue-intake.yml:** Auto-label and triage intake issues
+
+### Commit convention
+```
+<type>: <description>
+
+Types: feat, fix, docs, style, refactor, test, chore
+Examples:
+  feat: add Cursor build target
+  fix: resolve template rendering for nested skills
+  test: add unit tests for validation module
+```
+
+---
+
+## Phase 7: Build, Verify, Commit
+
+After all source files exist:
+
+```bash
+npm install
+npm run build        # Generates plugins/claude/, plugins/copilot/, plugins/cursor/
+npm run lint         # Must pass
+npm test             # Must pass
+npm run format       # Auto-format scripts
+```
+
+Verify:
+- [ ] All 3 marketplace manifests list CDK plugin with correct metadata
+- [ ] CDK plugin builds to all 3 targets with 9 agents + 13 skills
+- [ ] MCP config emitted correctly per ecosystem
+- [ ] Mustache tokens resolved in built output (no raw `{{{HEADER}}}` in output)
+- [ ] Unit tests cover build pipeline modules
+- [ ] sample-plugin builds successfully
+
+Commit both source (`src/`) and built output (`plugins/`, marketplace manifests).
+
+---
+
+## Key Design Principles
+
+1. **Write once, build many** — single source in `src/`, three ecosystem outputs
+2. **Committed artifacts** — `plugins/` IS the marketplace; no separate distribution repo
+3. **Governance at plugin level** — risk, compliance, owner in plugin.yaml; not duplicated in every primitive
+4. **Agents are spawned, not invoked** — review/research/planning agents have `user-invocable: false`
+5. **File-based workflow state** — CDK persists context in `.cdk/` without external databases
+6. **Clean build** — `npm run build` wipes and regenerates all output
+7. **Conventional commits** — enforced by hooks and mirrored in cdk-commit skill
+
+---
+
+## Output Format
+
+When executing this prompt, produce deliverables organized by phase. For each file:
+
+```
+=== FILE: path/to/file.ext ===
+(complete file contents)
+=== END FILE ===
+```
+
+Do not omit files. Do not use placeholder comments like "// implement here" for critical build logic. Tests must be runnable, not stubs.
+
+If generating incrementally across multiple sessions, start with Phase 1–2 (scaffold + build pipeline), verify with tests, then Phase 3 (CDK plugin using agent_prompts/), then Phase 4–7.
+
+---
+
+## Reference: CDK Dependency Map
+
+```
+cdk-onboard
+    ↓
+cdk-start-ticket
+    ↓
+cdk-research ──→ cdk-code-explorer, cdk-web-researcher
+    ↓
+cdk-plan ──────→ cdk-code-architect
+    ↓
+cdk-implement
+
+cdk-review ────→ cdk-code-reviewer, cdk-code-simplifier, cdk-comment-analyzer,
+                 cdk-test-analyzer, cdk-silent-failure-hunter, cdk-type-design-analyzer
+
+Utilities: cdk-help, cdk-switch-ticket, cdk-commit, cdk-create-pr,
+            cdk-fix-review, cdk-provide-feedback, cdk-report-issue
+```
+
+For detailed specs of each agent and skill, use the corresponding file in `agent_prompts/`.

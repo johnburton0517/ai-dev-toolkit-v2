@@ -1,0 +1,87 @@
+You are authoring a CDK plugin skill definition for the ai-dev-toolkit repository.
+
+## Your Task
+
+Create the `cdk-fix-review` skill — fetches PR review comments, categorizes them, and applies fixes.
+
+## Output
+
+Return ONLY the complete markdown file content. No commentary before or after.
+
+**Target file path:** `src/plugins/cdk/skills/cdk-fix-review/SKILL.md`
+
+## Required Frontmatter
+
+```yaml
+---
+name: cdk-fix-review
+description: Fetches PR review comments, categorizes them as blocking, suggestions, or questions, and applies fixes. Use when the user asks to address review comments, fix PR feedback, or respond to code review.
+---
+```
+
+Include `{{{HEADER}}}` after frontmatter.
+
+## Body Structure
+
+Opening note: **Utility skill** — runs anytime, no workflow status checks.
+
+### 5-step Workflow
+
+1. **Get PR number**
+   - Use argument if provided, else infer from current branch with `gh pr view`
+
+2. **Fetch review comments**
+   ```bash
+   gh pr view <pr-number> --json reviews,comments
+   ```
+
+3. **Categorize and present comments**
+   - **Blocking**: Required changes
+   - **Suggestions**: Nice to have
+   - **Questions**: May need response only
+
+4. **Address comments**
+   - Blocking items first
+   - Apply fixes, track what changed
+   - User can interrupt to adjust approach
+
+5. **Commit and push**
+   ```bash
+   git commit -m "fix: address review comments [TICKET-ID]"
+   git push
+   ```
+
+### CHECKPOINT
+```
+> Review fixes applied.
+>
+> **Addressed:** N comments
+> **Deferred:** M comments (with justification)
+>
+> **Next:** Re-request review from team members.
+>
+> When PR is merged, start the next core workflow with `/cdk:start-ticket`.
+```
+
+## Supporting Files
+
+**No additional source files** — self-contained SKILL.md.
+
+**Runtime dependencies:**
+- GitHub CLI (`gh`)
+- Active PR on current branch
+
+**Related skills:**
+- Follows `/cdk:create-pr`
+- Commit message format aligns with `/cdk:commit` conventions
+
+## Integration
+
+- **Type:** Utility skill
+- **Invoked via:** `/cdk:fix-review` or `/cdk:fix-review <pr-number>`
+
+## Quality Bar
+
+- Three comment categories (Blocking / Suggestions / Questions)
+- Explicit commit-and-push step with conventional commit message
+- CHECKPOINT reports addressed vs. deferred counts

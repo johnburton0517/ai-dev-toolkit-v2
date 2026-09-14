@@ -1,0 +1,20 @@
+{
+  "name": "cdk",
+  "description": "Core development workflow plugin — structured dev loop with GitHub Issues integration, file-based task tracking, multi-agent code review, and PR management",
+  "version": "2.0.0",
+  "skills": [
+    "skills/cdk-commit",
+    "skills/cdk-create-pr",
+    "skills/cdk-fix-review",
+    "skills/cdk-help",
+    "skills/cdk-implement",
+    "skills/cdk-onboard",
+    "skills/cdk-plan",
+    "skills/cdk-provide-feedback",
+    "skills/cdk-report-issue",
+    "skills/cdk-research",
+    "skills/cdk-review",
+    "skills/cdk-start-ticket",
+    "skills/cdk-switch-ticket"
+  ]
+}

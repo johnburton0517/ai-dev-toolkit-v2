@@ -1,0 +1,25 @@
+name: New MCP
+description: Propose adding or changing an MCP server in a plugin
+title: 'feat(mcp): '
+labels: [intake, new-mcp]
+body:
+  - type: input
+    id: plugin
+    attributes:
+      label: Plugin id
+    validations:
+      required: true
+  - type: textarea
+    id: server
+    attributes:
+      label: MCP server details
+      description: Command, args, purpose, and security considerations
+    validations:
+      required: true
+  - type: textarea
+    id: ecosystems
+    attributes:
+      label: Ecosystems
+      description: Claude, Copilot, Cursor — any special transform needs?
+    validations:
+      required: true

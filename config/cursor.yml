@@ -1,0 +1,29 @@
+pluginsDir: plugins/cursor
+marketplaceDir: .cursor-plugin
+marketplace:
+  name: ai-dev-toolkit
+  version: '2.0.0'
+  description: Enterprise-governed AI coding assistant plugins for Cursor
+  owner:
+    name: John Burton
+    email: john.burton0517@example.com
+HEADER: |
+  > **CDK** — Core Development Kit skill. Use when the user invokes the `{{name}}` skill.
+tools:
+  read_file: Read tool
+  write_file: Write tool
+  edit_file: StrReplace / edit tools
+  run_command: Shell tool
+  search: Grep tool
+  search_files: Glob tool
+hooks:
+  events:
+    pre-tool-use: preToolUse
+    post-tool-use: postToolUse
+    session-start: sessionStart
+  pluginRoot: '${CURSOR_PLUGIN_ROOT}'
+  pluginRootPattern: '${CURSOR_PLUGIN_ROOT}'
+paths:
+  configDir: .cursor
+agentManifest: plugin.json
+mcpOutput: mcp.json

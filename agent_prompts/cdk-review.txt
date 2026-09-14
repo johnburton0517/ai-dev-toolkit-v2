@@ -1,0 +1,122 @@
+You are authoring a CDK plugin skill definition for the ai-dev-toolkit repository.
+
+## Your Task
+
+Create the `cdk-review` skill — orchestrates parallel multi-agent code review across six specialized reviewers.
+
+## Output
+
+Return ONLY the complete markdown file content. No commentary before or after.
+
+**Target file path:** `src/plugins/cdk/skills/cdk-review/SKILL.md`
+
+## Required Frontmatter
+
+```yaml
+---
+name: cdk-review
+description: Runs parallel multi-agent code review across six reviewers covering code quality, simplicity, comments, tests, error handling, and type design. Use when the user asks to review code, run a code review, or check changes before opening a PR.
+---
+```
+
+Include `{{{HEADER}}}` after frontmatter.
+
+## Body Structure
+
+### Role
+REVIEW AGENT performing code review.
+Workflow: categorize files → run parallel reviewers → synthesize findings → recommend action.
+
+### Review Agents table
+Spawn all in parallel. `--skip=` excludes by key.
+
+| Agent | Focus | Skip Key |
+| cdk-code-reviewer | Guidelines, bugs, quality | `code` |
+| cdk-code-simplifier | Clarity, consistency, maintainability | `simplify` |
+| cdk-comment-analyzer | Comment accuracy, docs quality | `comments` |
+| cdk-test-analyzer | Test coverage gaps, quality | `tests` |
+| cdk-silent-failure-hunter | Error handling, silent failures | `errors` |
+| cdk-type-design-analyzer | Type design, invariants | `types` |
+
+Example: `/cdk:review --skip=simplify,comments`
+
+### Review Workflow
+
+**Step 1: Determine Review Scope**
+Parse `--scope` from arguments. If not provided, **ask user** with 3 options:
+1. Local changes — uncommitted + untracked
+2. Branch changes — all commits vs base branch
+3. Full codebase — everything
+
+Wait for selection.
+
+| Scope | What is reviewed |
+| local | Uncommitted tracked + untracked files |
+| branch | All commits on branch vs base |
+| full | Entire codebase |
+
+**File collection commands:**
+- local: `git diff --name-only HEAD` + `git ls-files --others --exclude-standard`; diff via `git diff HEAD -- <file>`; read untracked directly
+- branch: `git diff --name-only <base>...HEAD`; diff via `git diff <base>...HEAD -- <file>`
+- full: `git ls-files`; read directly
+
+Base branch resolution (branch scope):
+1. `.cdk/settings.md` → `base_branch`
+2. `git symbolic-ref refs/remotes/origin/HEAD ...`
+3. Fallback: `main`
+
+Store file list AND diff command. Pass both explicitly to every sub-agent.
+
+**Step 2: Categorize Files and Run Reviews**
+Categorize by risk (high: auth/data/APIs, medium: business logic, low: UI/docs/tests).
+Spawn enabled agents in parallel.
+
+**When spawning each agent, include:**
+- Review scope name
+- Exact file list
+- Exact diff command per file
+
+Agents must only review specified scope.
+
+**Step 3: Categorize Findings**
+Classify as Critical (must fix before PR), Warning (should fix), Info (nice to have).
+
+### Finalization CHECKPOINT
+Findings summary table: Critical/Warning/Info counts.
+
+If action items exist, display table:
+| Priority | Category | File/Area | Action |
+
+Ask user to confirm which items to address.
+
+## Supporting Files
+
+### Agent definitions (6 files in `src/plugins/cdk/agents/`)
+Each reviewer agent has its own prompt file in agent_prompts/:
+- cdk-code-reviewer.txt
+- cdk-code-simplifier.txt
+- cdk-comment-analyzer.txt
+- cdk-test-analyzer.txt
+- cdk-silent-failure-hunter.txt
+- cdk-type-design-analyzer.txt
+
+Orchestrator must pass scope, file list, and diff command to each.
+
+### Settings dependency
+`.cdk/settings.md` (from settings-template.md) for base_branch in branch scope.
+
+**No runtime artifacts written** — findings presented to user only.
+
+## Integration
+
+- **Type:** Utility skill
+- **Invoked via:** `/cdk:review [--scope=local|branch|full] [--skip=agents]`
+- **Spawns:** up to 6 review agents in parallel
+
+## Quality Bar
+
+- Complete agent table with skip keys
+- Scope selection prompt when --scope omitted
+- Explicit git commands per scope
+- Base branch 3-tier resolution
+- Mandatory pass-through of file list and diff command to sub-agents

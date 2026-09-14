@@ -1,0 +1,30 @@
+pluginsDir: plugins/copilot
+marketplaceDir: .github/plugin
+marketplace:
+  name: ai-dev-toolkit
+  version: '2.0.0'
+  description: Enterprise-governed AI coding assistant plugins for GitHub Copilot
+  owner:
+    name: johnburton0517
+    email: john.burton0517@example.com
+HEADER: |
+  > **CDK** — Core Development Kit skill. Invoke as `/cdk:{{name}}` in GitHub Copilot.
+tools:
+  read_file: Read files from the workspace
+  write_file: Create or overwrite files
+  edit_file: Apply targeted edits
+  run_command: Run terminal commands
+  search: Search file contents
+  search_files: Find files by pattern
+hooks:
+  events:
+    pre-tool-use: preToolUse
+    post-tool-use: postToolUse
+    session-start: sessionStart
+  pluginRoot: '${COPILOT_PLUGIN_ROOT}'
+  pluginRootPattern: '${COPILOT_PLUGIN_ROOT}'
+paths:
+  configDir: .github
+agentSuffix: .agent.md
+agentManifest: plugin.json
+mcpOutput: mcp.json

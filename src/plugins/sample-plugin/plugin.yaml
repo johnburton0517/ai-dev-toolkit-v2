@@ -1,0 +1,13 @@
+name: sample-plugin
+version: 1.0.0
+description: Reference plugin demonstrating agents, skills, and build conventions
+owner:
+  name: John Burton
+  email: john.burton0517@example.com
+risk: low
+compliance:
+  - approved
+tags:
+  - sample
+  - reference
+publish: true
