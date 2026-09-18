@@ -3,8 +3,8 @@
 ## Commands
 
 ```bash
-npm run build          # Wipe plugins/ and rebuild claude + copilot + cursor
-npm run build -- claude   # Single target
+npm run build          # Rebuild claude + copilot + cursor (wipes each plugins/<target>/)
+npm run build -- claude   # Rebuild Claude only; leave copilot/cursor output intact
 npm run lint           # ESLint + yaml-lint
 npm test               # Vitest unit tests (tests/unit/build/)
 npm run format         # Prettier on scripts and config
